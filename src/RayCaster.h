@@ -40,6 +40,7 @@ private:
     void drawMap();
     void drawMapSquares();
     void drawMapPlayer();
+    void drawFPS();
     void drawMapDebugLines(const Vector2<float>& mapPlayerPosition);
 
     std::pair<Vector2<int>, Vector2<float>> calculateInitialStep(

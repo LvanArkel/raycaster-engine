@@ -13,6 +13,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <string>
 
 #ifdef __EMSCRIPTEN__
 extern "C" void emscriptenCallback(Game* game)
@@ -94,7 +95,12 @@ int Game::run()
             lag -= timeStep;
         }
 
+        high_resolution_clock::time_point prerender = high_resolution_clock::now();
         render();
+        high_resolution_clock::time_point postrender = high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> fp_ms = postrender - prerender;
+        renderer_->setName(std::to_string(fp_ms.count()));
+        
     }
 #endif
 

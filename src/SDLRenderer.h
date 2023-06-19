@@ -26,6 +26,8 @@ public:
 
     void drawBuffer(uint32_t* drawBuffer) override;
 
+    void setName(const std::string& windowTitle) override;
+
     std::optional<Texture> createTexture(const std::string& textureFilePath) override;
 
 private:

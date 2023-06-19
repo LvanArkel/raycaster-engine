@@ -115,6 +115,11 @@ void SDLRenderer::drawBuffer(uint32_t* drawBuffer)
     SDL_RenderCopy(renderer_.get(), streamableTexture_.get(), nullptr, nullptr);
 }
 
+void SDLRenderer::setName(const std::string& windowTitle)
+{
+    SDL_SetWindowTitle(window_.get(), windowTitle.c_str());
+}
+
 std::optional<Texture> SDLRenderer::createTexture(const std::string& textureFilePath)
 {
     SDLSurfacePtr loadedSurface(SDL_LoadBMP(textureFilePath.c_str()));

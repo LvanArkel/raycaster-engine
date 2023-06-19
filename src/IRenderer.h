@@ -26,6 +26,8 @@ public:
 
     virtual void drawBuffer(uint32_t* drawBuffer) = 0;
 
+    virtual void setName(const std::string& windowTitle) = 0;
+
     // TODO: Remove SDL dependency with std_image and move to Texture.cpp as factory method.
     virtual std::optional<Texture> createTexture(const std::string& textureFilePath) = 0;
 };
