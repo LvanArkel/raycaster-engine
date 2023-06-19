@@ -59,6 +59,20 @@ constexpr uint32_t RayCaster::rgbToUint32(const uint8_t r, const uint8_t g, cons
 
 uint32_t RayCaster::shadeTexelByDistance(const uint32_t texelToShade, const float distance)
 {
+    #if 1
+    static const float shadeAmount = 0.4f;
+    const float shadeFactor = 1.0f - std::min(1.0f, distance * shadeAmount);
+    //shadefactor [0f..1f]
+    const int shadeFactorI = (int)(shadeFactor * 256.0f);
+
+    int redblue = texelToShade & 0x00FF00FF;
+    int green = texelToShade & 0x0000FF00;
+    
+    redblue = (redblue * shadeFactorI) & 0xFF00FF00;
+    green = (green * shadeFactorI) & 0x00FF0000;
+
+    return ((redblue + green) >> 8) + 0xFF000000;
+    #else
     static const float shadeAmount = 0.4f;
     const float shadeFactor = 1.0f - std::min(1.0f, distance * shadeAmount);
 
@@ -71,6 +85,7 @@ uint32_t RayCaster::shadeTexelByDistance(const uint32_t texelToShade, const floa
     blue = uint8_t(float(blue) * shadeFactor);
 
     return rgbToUint32(red, green, blue);
+    #endif
 }
 
 void RayCaster::drawTop()
