@@ -81,6 +81,8 @@ int Game::run()
     high_resolution_clock::time_point previousTime = high_resolution_clock::now();
     nanoseconds lag(0ns);
 
+    double avg_millis = 0;
+
     while (running_)
     {
         high_resolution_clock::time_point currentTime = high_resolution_clock::now();
@@ -99,7 +101,8 @@ int Game::run()
         render();
         high_resolution_clock::time_point postrender = high_resolution_clock::now();
         std::chrono::duration<double, std::milli> fp_ms = postrender - prerender;
-        renderer_->setName(std::to_string(fp_ms.count()));
+        avg_millis = 0.95 * avg_millis + 0.05 * fp_ms.count();
+        renderer_->setName(std::to_string(avg_millis));
         
     }
 #endif
