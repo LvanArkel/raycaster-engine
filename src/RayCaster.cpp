@@ -8,6 +8,8 @@
 #include <cstring>
 #include <iostream>
 
+#define OPTIMIZED_CODE
+
 RayCaster::RayCaster(Camera& camera, Map& map) : camera_(camera), map_(map) {}
 
 bool RayCaster::init(IRenderer& renderer)
@@ -59,7 +61,7 @@ constexpr uint32_t RayCaster::rgbToUint32(const uint8_t r, const uint8_t g, cons
 
 uint32_t RayCaster::shadeTexelByDistance(const uint32_t texelToShade, const float distance)
 {
-    #if 1
+    #ifdef OPTIMIZED_CODE
     static const float shadeAmount = 0.4f;
     const float shadeFactor = 1.0f - std::min(1.0f, distance * shadeAmount);
     //shadefactor [0f..1f]
@@ -101,7 +103,7 @@ void RayCaster::drawTop()
 
 void RayCaster::drawBottom()
 {
-#if 1
+#ifdef OPTIMIZED_CODE
     const Vector2<float> leftmostRayDirection = camera_.planeLeftEdgeDirection();
     const Vector2<float> rightmostRayDirection = camera_.planeRightEdgeDirection();
     const float cameraVerticalPosition = 0.5f * static_cast<float>(screenHeight_);
@@ -475,7 +477,13 @@ void RayCaster::drawTexturedColumn(
         {
             texel = shadeTexelByDistance(texel, wallDistance);
         }
+
+#ifdef OPTIMIZED_CODE
+    drawBuffer_[y * screenWidth_ + x] = texel;
+#else
         plotPixel(x, y, texel);
+#endif
+
     }
 }
 
