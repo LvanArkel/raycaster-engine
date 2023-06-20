@@ -1,9 +1,10 @@
+#include <CL/cl.h>
+
 #include "RayCaster.h"
 
 #include "Camera.h"
 #include "IRenderer.h"
 #include "Vector2.h"
-#include <CL/opencl.h>
 
 #include <cmath>
 #include <cstring>

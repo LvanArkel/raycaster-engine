@@ -11,7 +11,7 @@ project(${PROJECT_NAME} LANGUAGES CXX)
 project(${PROJECT_NAME} VERSION 0.0.4)  # TODO: Get version from git tag
 
 include_directories(${PROJECT_SOURCE_DIR}/lib/OpenCL/inc)
-link_directories(${PROJECT_SOURCE_DIR}/lib/OpenCL/lib/OpenCL)
+link_directories(${PROJECT_SOURCE_DIR}/lib/OpenCL/lib)
 
 add_executable(${PROJECT_NAME} "")
 
