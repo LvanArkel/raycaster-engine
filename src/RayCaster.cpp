@@ -101,6 +101,47 @@ void RayCaster::drawTop()
 
 void RayCaster::drawBottom()
 {
+#if 1
+    const Vector2<float> leftmostRayDirection = camera_.planeLeftEdgeDirection();
+    const Vector2<float> rightmostRayDirection = camera_.planeRightEdgeDirection();
+    const float cameraVerticalPosition = 0.5f * static_cast<float>(screenHeight_);
+
+    const float widthFloat = static_cast<float>(bottomTexture_->width);
+    const float heightFloat = static_cast<float>(bottomTexture_->height);
+    
+    for (size_t y = screenHeight_ / 2 + 1; y < screenHeight_; ++y)
+    {
+        const size_t screenCenterDistance = y - screenHeight_ / 2;
+        const float cameraToRowDistance = cameraVerticalPosition / static_cast<float>(screenCenterDistance);
+
+        const Vector2<float> floorStep =
+            cameraToRowDistance * (rightmostRayDirection - leftmostRayDirection) / static_cast<float>(screenWidth_);
+
+        Vector2<float> floor = camera_.position() + (leftmostRayDirection * cameraToRowDistance);
+
+        for (size_t x = 0; x < screenWidth_; ++x)
+        {
+            const Vector2<size_t> cell = {static_cast<size_t>(floor.x), static_cast<size_t>(floor.y)};
+
+            const Vector2<size_t> texCoord = {
+                static_cast<size_t>(
+                    widthFloat * (floor.x - static_cast<float>(cell.x))) & (bottomTexture_->width - 1),
+                static_cast<size_t>(
+                    heightFloat * (floor.y - static_cast<float>(cell.y))) & (bottomTexture_->height - 1)};
+
+            floor += floorStep;
+
+            uint32_t texel = bottomTexture_->texels[bottomTexture_->width * texCoord.y + texCoord.x];
+
+            if (drawDarkness_)
+            {
+                texel = shadeTexelByDistance(texel, cameraToRowDistance);
+            }
+
+            plotPixel(x, y, texel);
+        }
+    }
+#else
     for (size_t y = screenHeight_ / 2 + 1; y < screenHeight_; ++y)
     {
         const Vector2<float> leftmostRayDirection = camera_.planeLeftEdgeDirection();
@@ -139,6 +180,7 @@ void RayCaster::drawBottom()
             plotPixel(x, y, texel);
         }
     }
+#endif
 }
 
 void RayCaster::drawWalls()
