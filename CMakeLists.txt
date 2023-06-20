@@ -10,7 +10,12 @@ set(PROJECT_NAME Raycaster)
 project(${PROJECT_NAME} LANGUAGES CXX)
 project(${PROJECT_NAME} VERSION 0.0.4)  # TODO: Get version from git tag
 
+include_directories(${PROJECT_SOURCE_DIR}/lib/OpenCL/inc)
+link_directories(${PROJECT_SOURCE_DIR}/lib/OpenCL/lib/OpenCL)
+
 add_executable(${PROJECT_NAME} "")
+
+target_link_libraries(${PROJECT_NAME} OpenCL)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
     CXX_STANDARD 17
