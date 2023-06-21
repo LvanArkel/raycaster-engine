@@ -7,8 +7,10 @@
 #include <cmath>
 #include <cstring>
 #include <iostream>
+#include <immintrin.h>
 
 #define OPTIMIZED_CODE
+#define SIMD
 
 RayCaster::RayCaster(Camera& camera, Map& map) : camera_(camera), map_(map) {}
 
@@ -104,6 +106,75 @@ void RayCaster::drawTop()
 void RayCaster::drawBottom()
 {
 #ifdef OPTIMIZED_CODE
+#ifdef SIMD
+    const Vector2<float> leftmostRayDirection = camera_.planeLeftEdgeDirection();
+    const Vector2<float> rightmostRayDirection = camera_.planeRightEdgeDirection();
+    const float cameraVerticalPosition = 0.5f * static_cast<float>(screenHeight_);
+
+    const float widthFloat = static_cast<float>(bottomTexture_->width);
+    __m128 widthFloat4 = _mm_set1_ps(widthFloat);
+    const float heightFloat = static_cast<float>(bottomTexture_->height);
+    __m128 heightFloat4 = _mm_set1_ps(heightFloat);
+
+    const __m128i width4 = _mm_set1_epi32(bottomTexture_->width);
+    const __m128i widthMask4 = _mm_set1_epi32(bottomTexture_->width - 1);
+    const __m128i heightMask4 = _mm_set1_epi32(bottomTexture_->height - 1);
+
+    for (size_t y = screenHeight_ / 2 + 1; y < screenHeight_; ++y)
+    {
+        const size_t screenCenterDistance = y - screenHeight_ / 2;
+        const float cameraToRowDistance = cameraVerticalPosition / static_cast<float>(screenCenterDistance);
+
+        const Vector2<float> floorStep =
+            cameraToRowDistance * (rightmostRayDirection - leftmostRayDirection) / static_cast<float>(screenWidth_);
+
+        __m128 floorStepOffsetX4 = _mm_set1_ps(floorStep.x * 4.0f);
+        __m128 floorStepOffsetY4 = _mm_set1_ps(floorStep.y * 4.0f);
+
+        Vector2<float> floor = camera_.position() + (leftmostRayDirection * cameraToRowDistance);
+        
+        union { __m128 floorX4; float floorX[4]; };
+        floorX[0] = floor.x;
+        floorX[1] = floor.x + floorStep.x;
+        floorX[2] = floor.x + floorStep.x + floorStep.x;
+        floorX[3] = floor.x + floorStep.x + floorStep.x + floorStep.x;
+        union { __m128 floorY4; float floorY[4]; };
+        floorY[0] = floor.y;
+        floorY[1] = floor.y + floorStep.y;
+        floorY[2] = floor.y + floorStep.y + floorStep.y;
+        floorY[3] = floor.y + floorStep.y + floorStep.y + floorStep.y;
+
+
+        for (size_t x = 0; x < screenWidth_; x += 4)
+        {
+            __m128 cellX4 = _mm_floor_ps(floorX4);
+            __m128 cellY4 = _mm_floor_ps(floorY4);
+            __m128i texCoordX4i = _mm_and_si128(_mm_cvtps_epi32(
+                _mm_mul_ps(widthFloat4, _mm_sub_ps(floorX4, cellX4))
+            ), widthMask4);
+            __m128i texCoordY4i = _mm_and_si128(_mm_cvtps_epi32(
+                _mm_mul_ps(heightFloat4, _mm_sub_ps(floorY4, cellY4))
+            ), heightMask4);
+            union { __m128i texCoord4; int texCoord[4]; };
+            texCoord4 = _mm_add_epi32(_mm_mullo_epi32(width4, texCoordY4i), texCoordX4i);
+            union { __m128i texel4; unsigned int texel[4]; };
+            for (size_t lane = 0; lane < 4; lane++)
+            {
+                texel[lane] = bottomTexture_->texels[texCoord[lane]];
+            // }
+            // for (size_t lane = 0; lane < 4; lane++) {
+                if (drawDarkness_)
+                {
+                    texel[lane] = shadeTexelByDistance(texel[lane], cameraToRowDistance);
+                }
+
+                plotPixel(x + lane, y, texel[lane]);
+            }
+            floorX4 = _mm_add_ps(floorX4, floorStepOffsetX4);
+            floorY4 = _mm_add_ps(floorY4, floorStepOffsetY4);
+        }
+    }
+#else
     const Vector2<float> leftmostRayDirection = camera_.planeLeftEdgeDirection();
     const Vector2<float> rightmostRayDirection = camera_.planeRightEdgeDirection();
     const float cameraVerticalPosition = 0.5f * static_cast<float>(screenHeight_);
@@ -143,6 +214,7 @@ void RayCaster::drawBottom()
             plotPixel(x, y, texel);
         }
     }
+#endif
 #else
     for (size_t y = screenHeight_ / 2 + 1; y < screenHeight_; ++y)
     {
