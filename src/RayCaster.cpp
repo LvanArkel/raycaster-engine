@@ -1,4 +1,4 @@
-#include <CL/cl.h>
+#include "CL/cl.h"
 
 #include "RayCaster.h"
 
@@ -16,6 +16,10 @@ RayCaster::RayCaster(Camera& camera, Map& map) : camera_(camera), map_(map) {}
 
 bool RayCaster::init(IRenderer& renderer)
 {
+    cl_platform_id platforms;
+    cl_uint num_platforms;
+    clGetPlatformIDs(1, &platforms, &num_platforms);
+    
     screenWidth_ = renderer.screenWidth();
     screenHeight_ = renderer.screenHeight();
     drawBuffer_.resize(screenWidth_ * screenHeight_);

@@ -9,6 +9,8 @@
 #include <optional>
 #include <vector>
 
+#pragma once
+
 class IRenderer;
 
 class RayCaster
