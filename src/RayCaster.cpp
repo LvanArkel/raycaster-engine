@@ -61,6 +61,27 @@ constexpr uint32_t RayCaster::rgbToUint32(const uint8_t r, const uint8_t g, cons
     return (255 << 24) + (r << 16) + (g << 8) + b;
 }
 
+__m128i RayCaster::shadeTexelByDistance4(const __m128i texelToShade4, const int shadeFactorI) {
+
+    static const __m128i redblueMask = _mm_set1_epi32(0x00FF00FF);
+    static const __m128i redblueResultMask = _mm_set1_epi32(0xFF00FF00);
+    static const __m128i greenMask = _mm_set1_epi32(0x0000FF00);
+    static const __m128i greenResultMask = _mm_set1_epi32(0x00FF0000);
+    static const __m128i alpha4 = _mm_set1_epi32(0xFF000000);
+
+    __m128i shadeFactorI4 = _mm_set1_epi32(shadeFactorI);
+
+    __m128i redblue4 = _mm_and_si128(texelToShade4, redblueMask);
+    __m128i green4 = _mm_and_si128(texelToShade4, greenMask);
+
+    redblue4 = _mm_and_si128(_mm_mullo_epi32(redblue4, shadeFactorI4), redblueResultMask);
+    green4 = _mm_and_si128(_mm_mullo_epi32(green4, shadeFactorI4), greenResultMask);
+
+    __m128i result4 = _mm_add_epi32(_mm_srli_epi32(_mm_add_epi32(redblue4, green4), 8), alpha4);
+
+    return result4;
+}
+
 uint32_t RayCaster::shadeTexelByDistance(const uint32_t texelToShade, const int shadeFactorI)
 {
     #ifdef OPTIMIZED_CODE
@@ -106,6 +127,8 @@ void RayCaster::drawBottom()
     const Vector2<float> rightmostRayDirection = camera_.planeRightEdgeDirection();
     const float cameraVerticalPosition = 0.5f * static_cast<float>(screenHeight_);
 
+    const int* bottomTextureAddress = (int*) &bottomTexture_->texels[0];
+
     const float widthFloat = static_cast<float>(bottomTexture_->width);
     __m128 widthFloat4 = _mm_set1_ps(widthFloat);
     const float heightFloat = static_cast<float>(bottomTexture_->height);
@@ -119,6 +142,11 @@ void RayCaster::drawBottom()
     {
         const size_t screenCenterDistance = y - screenHeight_ / 2;
         const float cameraToRowDistance = cameraVerticalPosition / static_cast<float>(screenCenterDistance);
+        
+        static const float shadeAmount = 0.4f;
+        const float shadeFactor = 1.0f - std::min(1.0f, cameraToRowDistance * shadeAmount);
+        //shadefactor [0f..1f]
+        const int shadeFactorI = (int)(shadeFactor * 256.0f);
 
         const Vector2<float> floorStep =
             cameraToRowDistance * (rightmostRayDirection - leftmostRayDirection) / static_cast<float>(screenWidth_);
@@ -153,13 +181,26 @@ void RayCaster::drawBottom()
             union { __m128i texCoord4; int texCoord[4]; };
             texCoord4 = _mm_add_epi32(_mm_mullo_epi32(width4, texCoordY4i), texCoordX4i);
             union { __m128i texel4; unsigned int texel[4]; };
+            // So this apparently doubles the total execution time
+            //texel4 = _mm_i32gather_epi32(bottomTextureAddress, texCoord4, 4);
+            #define SHADE4
             for (size_t lane = 0; lane < 4; lane++)
             {
                 texel[lane] = bottomTexture_->texels[texCoord[lane]];
             // }
             // for (size_t lane = 0; lane < 4; lane++) {
-                //plotPixel(x + lane, y, texel[lane]);
+                #ifndef SHADE4
+                if (drawDarkness_)
+                {
+                    texel[lane] = shadeTexelByDistance(texel[lane], shadeFactorI);
+                }
+                #endif
             }
+            #ifdef SHADE4
+            if (drawDarkness_) {
+                texel4 = shadeTexelByDistance4(texel4, shadeFactorI);
+            }
+            #endif
             *((__m128i*) &drawBuffer_[y * screenWidth_ + x]) = texel4;
 
             floorX4 = _mm_add_ps(floorX4, floorStepOffsetX4);

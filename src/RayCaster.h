@@ -8,6 +8,7 @@
 #include <array>
 #include <optional>
 #include <vector>
+#include <immintrin.h>
 
 class IRenderer;
 
@@ -33,6 +34,7 @@ private:
 
     static constexpr uint32_t rgbToUint32(const uint8_t r, const uint8_t g, const uint8_t b);
     static uint32_t shadeTexelByDistance(const uint32_t texelToShade, const int shadeFactorI);
+    static __m128i shadeTexelByDistance4(const __m128i texelToShade4, const int shadeFactorI);
 
     void drawTop();
     void drawBottom();
