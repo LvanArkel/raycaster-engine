@@ -163,13 +163,10 @@ void RayCaster::drawBottom()
                 texel[lane] = bottomTexture_->texels[texCoord[lane]];
             // }
             // for (size_t lane = 0; lane < 4; lane++) {
-                if (drawDarkness_)
-                {
-                    texel[lane] = shadeTexelByDistance(texel[lane], cameraToRowDistance);
-                }
-
-                plotPixel(x + lane, y, texel[lane]);
+                //plotPixel(x + lane, y, texel[lane]);
             }
+            *((__m128i*) &drawBuffer_[y * screenWidth_ + x]) = texel4;
+
             floorX4 = _mm_add_ps(floorX4, floorStepOffsetX4);
             floorY4 = _mm_add_ps(floorY4, floorStepOffsetY4);
         }
