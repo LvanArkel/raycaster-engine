@@ -32,7 +32,7 @@ private:
     static constexpr uint32_t DARKEN_MASK = 8355711;
 
     static constexpr uint32_t rgbToUint32(const uint8_t r, const uint8_t g, const uint8_t b);
-    static uint32_t shadeTexelByDistance(const uint32_t texelToShade, const float distance);
+    static uint32_t shadeTexelByDistance(const uint32_t texelToShade, const int shadeFactorI);
 
     void drawTop();
     void drawBottom();
