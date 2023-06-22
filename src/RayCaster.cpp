@@ -59,14 +59,9 @@ constexpr uint32_t RayCaster::rgbToUint32(const uint8_t r, const uint8_t g, cons
     return (255 << 24) + (r << 16) + (g << 8) + b;
 }
 
-uint32_t RayCaster::shadeTexelByDistance(const uint32_t texelToShade, const float distance)
+uint32_t RayCaster::shadeTexelByDistance(const uint32_t texelToShade, const int shadeFactorI)
 {
     #ifdef OPTIMIZED_CODE
-    static const float shadeAmount = 0.4f;
-    const float shadeFactor = 1.0f - std::min(1.0f, distance * shadeAmount);
-    //shadefactor [0f..1f]
-    const int shadeFactorI = (int)(shadeFactor * 256.0f);
-
     int redblue = texelToShade & 0x00FF00FF;
     int green = texelToShade & 0x0000FF00;
     
@@ -116,6 +111,11 @@ void RayCaster::drawBottom()
         const size_t screenCenterDistance = y - screenHeight_ / 2;
         const float cameraToRowDistance = cameraVerticalPosition / static_cast<float>(screenCenterDistance);
 
+        static const float shadeAmount = 0.4f;
+        const float shadeFactor = 1.0f - std::min(1.0f, cameraToRowDistance * shadeAmount);
+        //shadefactor [0f..1f]
+        const int shadeFactorI = (int)(shadeFactor * 256.0f);
+
         const Vector2<float> floorStep =
             cameraToRowDistance * (rightmostRayDirection - leftmostRayDirection) / static_cast<float>(screenWidth_);
 
@@ -137,7 +137,7 @@ void RayCaster::drawBottom()
 
             if (drawDarkness_)
             {
-                texel = shadeTexelByDistance(texel, cameraToRowDistance);
+                texel = shadeTexelByDistance(texel, shadeFactorI);
             }
 
             plotPixel(x, y, texel);
@@ -152,6 +152,11 @@ void RayCaster::drawBottom()
         const size_t screenCenterDistance = y - screenHeight_ / 2;
         const float cameraVerticalPosition = 0.5f * static_cast<float>(screenHeight_);
         const float cameraToRowDistance = cameraVerticalPosition / static_cast<float>(screenCenterDistance);
+
+        static const float shadeAmount = 0.4f;
+        const float shadeFactor = 1.0f - std::min(1.0f, cameraToRowDistance * shadeAmount);
+        //shadefactor [0f..1f]
+        const int shadeFactorI = (int)(shadeFactor * 256.0f);
 
         const Vector2<float> floorStep =
             cameraToRowDistance * (rightmostRayDirection - leftmostRayDirection) / static_cast<float>(screenWidth_);
@@ -176,7 +181,7 @@ void RayCaster::drawBottom()
 
             if (drawDarkness_)
             {
-                texel = shadeTexelByDistance(texel, cameraToRowDistance);
+                texel = shadeTexelByDistance(texel, shadeFactorI);
             }
 
             plotPixel(x, y, texel);
@@ -458,6 +463,12 @@ void RayCaster::drawTexturedColumn(
     float startingTexCoordY = (static_cast<float>(drawStart) - static_cast<float>(screenHeight_) / 2 +
                                static_cast<float>(wallColumnHeight) / 2) *
                               texCoordIncreaseStep;
+
+    static const float shadeAmount = 0.4f;
+    const float shadeFactor = 1.0f - std::min(1.0f, wallDistance * shadeAmount);
+    //shadefactor [0f..1f]
+    const int shadeFactorI = (int)(shadeFactor * 256.0f);
+
     for (int y = drawStart; y < drawEnd; ++y)
     {
         // Cast the texture coordinate to integer, and mask with (texHeight - 1) in case of
@@ -475,7 +486,7 @@ void RayCaster::drawTexturedColumn(
 
         if (drawDarkness_)
         {
-            texel = shadeTexelByDistance(texel, wallDistance);
+            texel = shadeTexelByDistance(texel, shadeFactorI);
         }
 
 #ifdef OPTIMIZED_CODE
