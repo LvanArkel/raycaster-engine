@@ -579,13 +579,14 @@ void RayCaster::drawTexturedColumn(
     //shadefactor [0f..1f]
     const int shadeFactorI = (int)(shadeFactor * 256.0f);
 
+    const size_t wallTextureHeight = wallTexture.height;
     for (int y = drawStart; y < drawEnd; ++y)
     {
         // Cast the texture coordinate to integer, and mask with (texHeight - 1) in case of
         // overflow
-        const size_t texCoordY = static_cast<size_t>(startingTexCoordY) & (wallTexture.height - 1);
+        const size_t texCoordY = static_cast<size_t>(startingTexCoordY) & (wallTextureHeight - 1);
         startingTexCoordY += texCoordIncreaseStep;
-        const size_t texelIndex = wallTexture.height * texCoordY + texCoordX;
+        const size_t texelIndex = wallTextureHeight * texCoordY + texCoordX;
         uint32_t texel = wallTexture.texels[texelIndex];
 
         // Shade horizontal sides darker
