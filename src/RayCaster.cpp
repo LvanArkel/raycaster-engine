@@ -589,12 +589,18 @@ void RayCaster::drawTexturedColumn(
         const size_t texelIndex = wallTextureHeight * texCoordY + texCoordX;
         uint32_t texel = wallTexture.texels[texelIndex];
 
-        // Shade horizontal sides darker
+#ifdef OPTIMIZED_CODE
+        uint32_t sideMask = 0xFFFFFFFF;
+        sideMask *= (int)WallSide::HORIZONTAL;
+        sideMask = sideMask & DARKEN_MASK;
+        texel = (texel >> 1) & sideMask;
+#else
+        Shade horizontal sides darker
         if (side == WallSide::HORIZONTAL)
         {
             texel = (texel >> 1) & DARKEN_MASK;
         }
-
+#endif // OPTIMIZED_CODE
         if (drawDarkness_)
         {
             texel = shadeTexelByDistance(texel, shadeFactorI);
