@@ -580,6 +580,49 @@ void RayCaster::drawTexturedColumn(
     const int shadeFactorI = (int)(shadeFactor * 256.0f);
 
     const size_t wallTextureHeight = wallTexture.height;
+
+#ifdef OPTIMIZED_CODE
+    if(drawDarkness_)
+    {
+        for (int y = drawStart; y < drawEnd; ++y)
+        {
+            // Cast the texture coordinate to integer, and mask with (texHeight - 1) in case of
+            // overflow
+            const size_t texCoordY = static_cast<size_t>(startingTexCoordY) & (wallTextureHeight - 1);
+            startingTexCoordY += texCoordIncreaseStep;
+            const size_t texelIndex = wallTextureHeight * texCoordY + texCoordX;
+            uint32_t texel = wallTexture.texels[texelIndex];
+
+            uint32_t sideMask = 0xFFFFFFFF;
+            sideMask *= (int)WallSide::HORIZONTAL;
+            sideMask = sideMask & DARKEN_MASK;
+            texel = (texel >> 1) & sideMask;
+
+            texel = shadeTexelByDistance(texel, shadeFactorI);
+
+            drawBuffer_[y * screenWidth_ + x] = texel;
+        }
+    }
+    else
+    {
+        for (int y = drawStart; y < drawEnd; ++y)
+        {
+            // Cast the texture coordinate to integer, and mask with (texHeight - 1) in case of
+            // overflow
+            const size_t texCoordY = static_cast<size_t>(startingTexCoordY) & (wallTextureHeight - 1);
+            startingTexCoordY += texCoordIncreaseStep;
+            const size_t texelIndex = wallTextureHeight * texCoordY + texCoordX;
+            uint32_t texel = wallTexture.texels[texelIndex];
+
+            uint32_t sideMask = 0xFFFFFFFF;
+            sideMask *= (int)WallSide::HORIZONTAL;
+            sideMask = sideMask & DARKEN_MASK;
+            texel = (texel >> 1) & sideMask;
+
+            drawBuffer_[y * screenWidth_ + x] = texel;
+        }
+    }
+#else
     for (int y = drawStart; y < drawEnd; ++y)
     {
         // Cast the texture coordinate to integer, and mask with (texHeight - 1) in case of
@@ -589,30 +632,19 @@ void RayCaster::drawTexturedColumn(
         const size_t texelIndex = wallTextureHeight * texCoordY + texCoordX;
         uint32_t texel = wallTexture.texels[texelIndex];
 
-#ifdef OPTIMIZED_CODE
         uint32_t sideMask = 0xFFFFFFFF;
         sideMask *= (int)WallSide::HORIZONTAL;
         sideMask = sideMask & DARKEN_MASK;
         texel = (texel >> 1) & sideMask;
-#else
-        Shade horizontal sides darker
-        if (side == WallSide::HORIZONTAL)
-        {
-            texel = (texel >> 1) & DARKEN_MASK;
-        }
-#endif // OPTIMIZED_CODE
+
         if (drawDarkness_)
         {
             texel = shadeTexelByDistance(texel, shadeFactorI);
         }
 
-#ifdef OPTIMIZED_CODE
-    drawBuffer_[y * screenWidth_ + x] = texel;
-#else
-        plotPixel(x, y, texel);
-#endif
-
+        drawBuffer_[y * screenWidth_ + x] = texel;
     }
+#endif // OPTIMIZED_CODE
 }
 
 void RayCaster::plotPixel(const uint16_t x, const uint16_t y, const uint32_t pixel)
